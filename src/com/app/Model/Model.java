@@ -1,36 +1,66 @@
 package com.app.Model;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.table.DefaultTableModel;
 
 public class Model {
     private Connection conexion;
 
-    public void conectar(String url, String usuario, String contrasena) throws SQLException {
-        conexion = DriverManager.getConnection(url, usuario, contrasena);
+    public List<String> obtenerTodasLasBasesDatos(String host, String usuario, String password) throws SQLException {
+        List<String> basesDatos = new ArrayList<>();
+        String url = "jdbc:mysql://" + host + ":3306/?useSSL=false";
+        
+        try (Connection conn = DriverManager.getConnection(url, usuario, password);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SHOW DATABASES")) {
+            
+            while (rs.next()) {
+                String nombreBD = rs.getString(1);
+                if (!nombreBD.matches("information_schema|mysql|performance_schema|sys")) {
+                    basesDatos.add(nombreBD);
+                }
+            }
+        }
+        return basesDatos;
+    }
+
+    public void conectar(String host, String database, String usuario, String password) throws SQLException {
+        conexion = DriverManager.getConnection(
+            "jdbc:mysql://" + host + ":3306/" + database + "?useSSL=false",
+            usuario,
+            password
+        );
+    }
+
+    public void desconectar() throws SQLException {
+        if (conexion != null && !conexion.isClosed()) {
+            conexion.close();
+        }
     }
 
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
-        Statement stmt = conexion.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
-        ResultSetMetaData meta = rs.getMetaData();
+        try (Statement stmt = conexion.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
 
-        DefaultTableModel modelo = new DefaultTableModel();
-        int columnas = meta.getColumnCount();
-        for (int i = 1; i <= columnas; i++) {
-            modelo.addColumn(meta.getColumnName(i));
-        }
+            ResultSetMetaData meta = rs.getMetaData();
+            DefaultTableModel modelo = new DefaultTableModel();
+            int columnas = meta.getColumnCount();
 
-        while (rs.next()) {
-            Object[] fila = new Object[columnas];
-            for (int i = 0; i < columnas; i++) {
-                fila[i] = rs.getObject(i + 1);
+            for (int i = 1; i <= columnas; i++) {
+                modelo.addColumn(meta.getColumnName(i));
             }
-            modelo.addRow(fila);
-        }
 
-        rs.close();
-        stmt.close();
-        return modelo;
+            while (rs.next()) {
+                Object[] fila = new Object[columnas];
+                for (int i = 0; i < columnas; i++) {
+                    fila[i] = rs.getObject(i + 1);
+                }
+                modelo.addRow(fila);
+            }
+
+            return modelo;
+        }
     }
 }
