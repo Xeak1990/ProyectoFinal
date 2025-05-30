@@ -3,12 +3,15 @@ package com.app;
 import com.app.Controller.Controller;
 import com.app.Model.Model;
 import com.app.View.View;
+import com.app.View.SqlEditorView;
 
 public class Main {
     public static void main(String[] args) {
-        View vista = new View();
-        Model modelo = new Model();
-        Controller controlador = new Controller(vista, modelo);
-        controlador.iniciar();
+        Model model = new Model();
+        View loginView = new View();
+        SqlEditorView editorView = new SqlEditorView();
+        
+        editorView.setVisible(false);
+        new Controller(loginView, editorView, model);
     }
 }

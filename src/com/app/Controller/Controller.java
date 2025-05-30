@@ -2,47 +2,163 @@ package com.app.Controller;
 
 import com.app.Model.Model;
 import com.app.View.View;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import com.app.View.SqlEditorView;
+import java.util.List;
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 public class Controller {
-    private View vista;
-    private Model modelo;
+    private final View loginView;
+    private final SqlEditorView editorView;
+    private final Model modelo;
 
-    public Controller(View vista, Model modelo) {
-        this.vista = vista;
-        this.modelo = modelo;
+    public Controller(View loginView, SqlEditorView editorView, Model model) {
+        this.loginView = loginView;
+        this.editorView = editorView;
+        this.modelo = model;
 
-        this.vista.btnEjecutar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ejecutarQuery();
+        configurarListeners();
+        loginView.setVisible(true);
+    }
+
+    private void configurarListeners() {
+        loginView.getBtnActualizarBases().addActionListener(e -> {
+            loginView.limpiarEstado();
+            validarCamposLogin(true);
+            cargarBasesDatos();
+        });
+        
+        loginView.getBtnConectar().addActionListener(e -> {
+            loginView.limpiarEstado();
+            if(validarCamposLogin(false)) {
+                conectarABaseDatos();
             }
         });
+        
+        loginView.getBtnSalir().addActionListener(e -> System.exit(0));
+        editorView.getBtnEjecutar().addActionListener(e -> ejecutarConsulta());
+        editorView.getBtnLimpiar().addActionListener(e -> limpiarEditor());
     }
 
-    public void iniciar() {
-        vista.setVisible(true);
-        try {
-            modelo.conectar("jdbc:mysql://localhost:3306/tu_base_datos", "axel", "0101");
-            vista.lblEstado.setText("Conexión exitosa.");
-        } catch (Exception e) {
-            vista.lblEstado.setText("Error de conexión: " + e.getMessage());
+    private boolean validarCamposLogin(boolean soloCredenciales) {
+        if(loginView.getUsuario().isEmpty()) {
+            loginView.mostrarError("El usuario es requerido");
+            return false;
         }
+        
+        if(loginView.getPassword().isEmpty()) {
+            loginView.mostrarError("La contraseña es requerida");
+            return false;
+        }
+        
+        if(!soloCredenciales && loginView.getBaseDatosSeleccionada() == null) {
+            loginView.mostrarError("Debe seleccionar una base de datos");
+            return false;
+        }
+        
+        return true;
     }
 
-    private void ejecutarQuery() {
-        String query = vista.txtQuery.getText();
-        try {
-            DefaultTableModel modeloTabla = modelo.ejecutarConsulta(query);
-            vista.tablaResultados.setModel(modeloTabla);
-            vista.lblEstado.setText("Consulta ejecutada correctamente.");
-        } catch (Exception ex) {
-            vista.lblEstado.setText("Error en ejecución: " + ex.getMessage());
+    private void cargarBasesDatos() {
+        if(!validarCamposLogin(true)) return;
+        
+        loginView.bloquearInterfaz(true);
+        
+        SwingWorker<List<String>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<String> doInBackground() throws Exception {
+                return modelo.obtenerTodasLasBasesDatos(
+                    loginView.getServidor(),
+                    loginView.getUsuario(),
+                    loginView.getPassword()
+                );
+            }
+
+            @Override
+            protected void done() {
+                loginView.bloquearInterfaz(false);
+                try {
+                    List<String> bases = get();
+                    
+                    if (bases.isEmpty()) {
+                        loginView.mostrarError("No se encontraron bases de datos");
+                    } else {
+                        loginView.setBasesDatos(bases);
+                        JOptionPane.showMessageDialog(loginView,
+                            "Bases de datos actualizadas correctamente",
+                            "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    loginView.mostrarError("Error: " + ex.getMessage());
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+
+    private void conectarABaseDatos() {
+        loginView.bloquearInterfaz(true);
+        
+        SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Boolean doInBackground() throws Exception {
+                modelo.conectar(
+                    loginView.getServidor(),
+                    loginView.getBaseDatosSeleccionada(),
+                    loginView.getUsuario(),
+                    loginView.getPassword()
+                );
+                return true;
+            }
+
+            @Override
+            protected void done() {
+                loginView.bloquearInterfaz(false);
+                try {
+                    get(); // Para propagar cualquier excepción
+                    loginView.setVisible(false);
+                    editorView.setVisible(true);
+                } catch (Exception ex) {
+                    loginView.mostrarError("Error de conexión: " + ex.getMessage());
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+
+    private void ejecutarConsulta() {
+        if(editorView.getConsulta().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(editorView,
+                "Ingrese una consulta SQL",
+                "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
         }
+
+        SwingWorker<DefaultTableModel, Void> worker = new SwingWorker<>() {
+            @Override
+            protected DefaultTableModel doInBackground() throws Exception {
+                return modelo.ejecutarConsulta(editorView.getConsulta());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    DefaultTableModel modelo = get();
+                    editorView.setResultados(modelo);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(editorView,
+                        "Error en la consulta: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+
+    private void limpiarEditor() {
+        editorView.limpiar();
     }
 }
