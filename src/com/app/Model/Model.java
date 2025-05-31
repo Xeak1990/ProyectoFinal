@@ -40,11 +40,23 @@ public class Model {
         }
     }
 
+    public List<String> obtenerTablasDeBaseDatos() throws SQLException {
+        List<String> tablas = new ArrayList<>();
+        if (conexion != null && !conexion.isClosed()) {
+            DatabaseMetaData metaData = conexion.getMetaData();
+            try (ResultSet rs = metaData.getTables(null, null, "%", new String[]{"TABLE"})) {
+                while (rs.next()) {
+                    tablas.add(rs.getString("TABLE_NAME"));
+                }
+            }
+        }
+        return tablas;
+    }
+
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
         try (Statement stmt = conexion.createStatement()) {
             String trimmedQuery = query.trim().toLowerCase();
     
-            // Si empieza con SELECT, ejecuta como consulta
             if (trimmedQuery.startsWith("select")) {
                 try (ResultSet rs = stmt.executeQuery(query)) {
                     ResultSetMetaData meta = rs.getMetaData();
@@ -62,11 +74,9 @@ public class Model {
                         }
                         modelo.addRow(fila);
                     }
-    
                     return modelo;
                 }
             } else {
-                // Para INSERT, UPDATE, DELETE
                 int filasAfectadas = stmt.executeUpdate(query);
                 DefaultTableModel modelo = new DefaultTableModel();
                 modelo.addColumn("Resultado");
@@ -75,5 +85,4 @@ public class Model {
             }
         }
     }
-    
 }
