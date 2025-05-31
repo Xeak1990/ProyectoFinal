@@ -1,8 +1,10 @@
 package com.app.Controller;
 
 import com.app.Model.Model;
-import com.app.View.View;
 import com.app.View.SqlEditorView;
+import com.app.View.View;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -38,6 +40,7 @@ public class Controller {
         loginView.getBtnSalir().addActionListener(e -> System.exit(0));
         editorView.getBtnEjecutar().addActionListener(e -> ejecutarConsulta());
         editorView.getBtnLimpiar().addActionListener(e -> limpiarEditor());
+        editorView.getBtnRefrescarTablas().addActionListener(e -> refrescarTablas());
     }
 
     private boolean validarCamposLogin(boolean soloCredenciales) {
@@ -116,16 +119,59 @@ public class Controller {
             protected void done() {
                 loginView.bloquearInterfaz(false);
                 try {
-                    get(); // Para propagar cualquier excepción
+                    get();
+                    String nombreBD = loginView.getBaseDatosSeleccionada();
+                    editorView.setBaseDeDatos(nombreBD);
+                    
+                    List<String> tablas = modelo.obtenerTablasDeBaseDatos();
+                    editorView.actualizarListaTablas(tablas);
+                    
                     loginView.setVisible(false);
                     editorView.setVisible(true);
                 } catch (Exception ex) {
+                    editorView.setBaseDeDatos(null);
+                    editorView.actualizarListaTablas(Collections.emptyList());
                     loginView.mostrarError("Error de conexión: " + ex.getMessage());
                 }
             }
         };
         
         worker.execute();
+    }
+
+    private void refrescarTablas() {
+        SwingWorker<List<String>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<String> doInBackground() throws Exception {
+                return modelo.obtenerTablasDeBaseDatos();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<String> tablas = get();
+                    editorView.actualizarListaTablas(tablas);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(editorView,
+                        "Error al obtener tablas: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void desconectar() {
+        try {
+            modelo.desconectar();
+            editorView.setBaseDeDatos(null);
+            editorView.setVisible(false);
+            loginView.setVisible(true);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(editorView,
+                "Error al desconectar: " + ex.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void ejecutarConsulta() {
