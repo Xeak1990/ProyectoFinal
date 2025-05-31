@@ -29,14 +29,14 @@ public class Controller {
             validarCamposLogin(true);
             cargarBasesDatos();
         });
-        
+
         loginView.getBtnConectar().addActionListener(e -> {
             loginView.limpiarEstado();
             if(validarCamposLogin(false)) {
                 conectarABaseDatos();
             }
         });
-        
+
         loginView.getBtnSalir().addActionListener(e -> System.exit(0));
         editorView.getBtnEjecutar().addActionListener(e -> ejecutarConsulta());
         editorView.getBtnLimpiar().addActionListener(e -> limpiarEditor());
@@ -48,25 +48,25 @@ public class Controller {
             loginView.mostrarError("El usuario es requerido");
             return false;
         }
-        
+
         if(loginView.getPassword().isEmpty()) {
             loginView.mostrarError("La contraseña es requerida");
             return false;
         }
-        
+
         if(!soloCredenciales && loginView.getBaseDatosSeleccionada() == null) {
             loginView.mostrarError("Debe seleccionar una base de datos");
             return false;
         }
-        
+
         return true;
     }
 
     private void cargarBasesDatos() {
         if(!validarCamposLogin(true)) return;
-        
+
         loginView.bloquearInterfaz(true);
-        
+
         SwingWorker<List<String>, Void> worker = new SwingWorker<>() {
             @Override
             protected List<String> doInBackground() throws Exception {
@@ -82,7 +82,7 @@ public class Controller {
                 loginView.bloquearInterfaz(false);
                 try {
                     List<String> bases = get();
-                    
+
                     if (bases.isEmpty()) {
                         loginView.mostrarError("No se encontraron bases de datos");
                     } else {
@@ -96,13 +96,13 @@ public class Controller {
                 }
             }
         };
-        
+
         worker.execute();
     }
 
     private void conectarABaseDatos() {
         loginView.bloquearInterfaz(true);
-        
+
         SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -122,10 +122,10 @@ public class Controller {
                     get();
                     String nombreBD = loginView.getBaseDatosSeleccionada();
                     editorView.setBaseDeDatos(nombreBD);
-                    
+
                     List<String> tablas = modelo.obtenerTablasDeBaseDatos();
                     editorView.actualizarListaTablas(tablas);
-                    
+
                     loginView.setVisible(false);
                     editorView.setVisible(true);
                 } catch (Exception ex) {
@@ -135,7 +135,7 @@ public class Controller {
                 }
             }
         };
-        
+
         worker.execute();
     }
 
@@ -193,14 +193,16 @@ public class Controller {
                 try {
                     DefaultTableModel modelo = get();
                     editorView.setResultados(modelo);
+                    editorView.setMensajeSistema("Consulta ejecutada correctamente");
                 } catch (Exception ex) {
+                    editorView.setMensajeSistema("Error: " + ex.getMessage());
                     JOptionPane.showMessageDialog(editorView,
                         "Error en la consulta: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
-        
+
         worker.execute();
     }
 

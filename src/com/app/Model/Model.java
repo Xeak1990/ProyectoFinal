@@ -11,11 +11,11 @@ public class Model {
     public List<String> obtenerTodasLasBasesDatos(String host, String usuario, String password) throws SQLException {
         List<String> basesDatos = new ArrayList<>();
         String url = "jdbc:mysql://" + host + ":3306/?useSSL=false";
-        
+
         try (Connection conn = DriverManager.getConnection(url, usuario, password);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW DATABASES")) {
-            
+
             while (rs.next()) {
                 String nombreBD = rs.getString(1);
                 if (!nombreBD.matches("information_schema|mysql|performance_schema|sys")) {
@@ -44,7 +44,8 @@ public class Model {
         List<String> tablas = new ArrayList<>();
         if (conexion != null && !conexion.isClosed()) {
             DatabaseMetaData metaData = conexion.getMetaData();
-            try (ResultSet rs = metaData.getTables(null, null, "%", new String[]{"TABLE"})) {
+            String catalogoActual = conexion.getCatalog(); // O el nombre de la BD usada en la conexión
+            try (ResultSet rs = metaData.getTables(catalogoActual, null, "%", new String[]{"TABLE"})) {
                 while (rs.next()) {
                     tablas.add(rs.getString("TABLE_NAME"));
                 }
@@ -56,17 +57,17 @@ public class Model {
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
         try (Statement stmt = conexion.createStatement()) {
             String trimmedQuery = query.trim().toLowerCase();
-    
+            DefaultTableModel modelo = new DefaultTableModel();
+
             if (trimmedQuery.startsWith("select")) {
-                try (ResultSet rs = stmt.executeQuery(query)) {
+                    try (ResultSet rs = stmt.executeQuery(query)) {
                     ResultSetMetaData meta = rs.getMetaData();
-                    DefaultTableModel modelo = new DefaultTableModel();
                     int columnas = meta.getColumnCount();
-    
+
                     for (int i = 1; i <= columnas; i++) {
                         modelo.addColumn(meta.getColumnName(i));
                     }
-    
+
                     while (rs.next()) {
                         Object[] fila = new Object[columnas];
                         for (int i = 0; i < columnas; i++) {
@@ -74,15 +75,71 @@ public class Model {
                         }
                         modelo.addRow(fila);
                     }
-                    return modelo;
                 }
             } else {
                 int filasAfectadas = stmt.executeUpdate(query);
-                DefaultTableModel modelo = new DefaultTableModel();
-                modelo.addColumn("Resultado");
-                modelo.addRow(new Object[] { "Filas afectadas: " + filasAfectadas });
-                return modelo;
+
+                String tabla = extraerNombreTabla(trimmedQuery);
+
+                if (tabla != null && !tabla.isEmpty()) {
+                    try (ResultSet rs = stmt.executeQuery("SELECT * FROM " + tabla)) {
+                        ResultSetMetaData meta = rs.getMetaData();
+                        int columnas = meta.getColumnCount();
+
+                        for (int i = 1; i <= columnas; i++) {
+                            modelo.addColumn(meta.getColumnName(i));
+                        }
+
+                        boolean tieneDatos = false;
+                        while (rs.next()) {
+                            tieneDatos = true;
+                            Object[] fila = new Object[columnas];
+                            for (int i = 0; i < columnas; i++) {
+                                fila[i] = rs.getObject(i + 1);
+                            }
+                            modelo.addRow(fila);
+                        }
+                        if (!tieneDatos) {
+                        }
+                    }
+                } else {
+                    modelo.addColumn("Mensaje del sistema");
+                    modelo.addRow(new Object[] { "Filas afectadas: " + filasAfectadas });
+                }
+            }
+
+            return modelo;
+        }
+    }
+
+    private String extraerNombreTabla(String query) {
+        // Esta es una versión simple, asume formato básico:
+        if (query.startsWith("create table")) {
+            String[] partes = query.split("\\s+");
+            if (partes.length >= 3) {
+                return partes[2].replaceAll("`", "");
+            }
+        } else if (query.startsWith("insert into")) {
+            String[] partes = query.split("\\s+");
+            if (partes.length >= 3) {
+                return partes[2].replaceAll("`", "");
+            }
+        } else if (query.startsWith("update")) {
+            String[] partes = query.split("\\s+");
+            if (partes.length >= 2) {
+                return partes[1].replaceAll("`", "");
+            }
+        } else if (query.startsWith("delete from")) {
+            String[] partes = query.split("\\s+");
+            if (partes.length >= 3) {
+                return partes[2].replaceAll("`", "");
+            }
+        } else if (query.startsWith("truncate table")) {
+            String[] partes = query.split("\\s+");
+            if (partes.length >= 3) {
+                return partes[2].replaceAll("`", "");
             }
         }
+        return null;
     }
 }

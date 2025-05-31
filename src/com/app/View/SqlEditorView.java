@@ -16,8 +16,8 @@ public class SqlEditorView extends JFrame {
     private JTextField txtBaseDeDatos;
     private JList<String> listaTablas;
     private DefaultListModel<String> modeloListaTablas;
+    private JLabel lblMensajeSistema; // NUEVO
 
-    // Colores y estilos
     private final Color COLOR_FONDO = new Color(245, 245, 245);
     private final Color COLOR_PRIMARIO = new Color(0, 120, 215);
     private final Color COLOR_SECUNDARIO = new Color(100, 180, 255);
@@ -35,42 +35,37 @@ public class SqlEditorView extends JFrame {
         getContentPane().setBackground(COLOR_FONDO);
         setLayout(new BorderLayout());
 
-        // Split pane vertical para dividir consulta y resultados
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setResizeWeight(0.35);
         splitPane.setDividerSize(3);
         splitPane.setBorder(null);
         add(splitPane, BorderLayout.CENTER);
 
-        // Panel superior - Consulta SQL
         JPanel panelSuperior = new JPanel(new BorderLayout(10, 10));
         panelSuperior.setBackground(COLOR_FONDO);
         panelSuperior.setBorder(BorderFactory.createCompoundBorder(
             new EmptyBorder(10, 10, 5, 10),
-            new TitledBorder(createLineBorder(COLOR_BORDE, 1), 
-            "Editor SQL", TitledBorder.LEFT, TitledBorder.TOP, 
+            new TitledBorder(createLineBorder(COLOR_BORDE, 1),
+            "Editor SQL", TitledBorder.LEFT, TitledBorder.TOP,
             FUENTE_TITULO, COLOR_PRIMARIO)
         ));
 
-        // TextArea para consulta SQL
         txtConsulta = new JTextArea(10, 60);
         txtConsulta.setFont(FUENTE_MONOSPACE);
         txtConsulta.setTabSize(2);
         txtConsulta.setLineWrap(true);
         txtConsulta.setWrapStyleWord(true);
         txtConsulta.setBorder(new EmptyBorder(5, 5, 5, 5));
-        
+
         JScrollPane scrollConsulta = new JScrollPane(txtConsulta);
         scrollConsulta.setBorder(null);
         panelSuperior.add(scrollConsulta, BorderLayout.CENTER);
 
-        // Panel lateral derecho
         JPanel panelDerecho = new JPanel();
         panelDerecho.setLayout(new BoxLayout(panelDerecho, BoxLayout.Y_AXIS));
         panelDerecho.setBackground(COLOR_FONDO);
         panelDerecho.setBorder(new EmptyBorder(0, 10, 0, 0));
 
-        // Campo de base de datos
         txtBaseDeDatos = new JTextField();
         txtBaseDeDatos.setEditable(false);
         txtBaseDeDatos.setFont(FUENTE_NORMAL);
@@ -84,24 +79,23 @@ public class SqlEditorView extends JFrame {
         panelDerecho.add(txtBaseDeDatos);
         panelDerecho.add(Box.createVerticalStrut(15));
 
-        // Botones
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
         panelBotones.setBackground(COLOR_FONDO);
         panelBotones.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
+
         btnEjecutar = new JButton("Ejecutar (F5)");
         estilizarBoton(btnEjecutar, true);
         btnEjecutar.setMaximumSize(new Dimension(150, 35));
-        
+
         btnLimpiar = new JButton("Limpiar");
         estilizarBoton(btnLimpiar, false);
         btnLimpiar.setMaximumSize(new Dimension(150, 35));
-        
+
         btnRefrescarTablas = new JButton("Refrescar tablas");
         estilizarBoton(btnRefrescarTablas, false);
         btnRefrescarTablas.setMaximumSize(new Dimension(150, 35));
-        
+
         panelBotones.add(btnEjecutar);
         panelBotones.add(Box.createVerticalStrut(10));
         panelBotones.add(btnLimpiar);
@@ -110,7 +104,6 @@ public class SqlEditorView extends JFrame {
         panelDerecho.add(panelBotones);
         panelDerecho.add(Box.createVerticalStrut(20));
 
-        // Lista de tablas
         modeloListaTablas = new DefaultListModel<>();
         listaTablas = new JList<>(modeloListaTablas);
         listaTablas.setFont(FUENTE_NORMAL);
@@ -127,11 +120,11 @@ public class SqlEditorView extends JFrame {
                 }
             }
         });
-        
+
         JScrollPane scrollTablas = new JScrollPane(listaTablas);
         scrollTablas.setBorder(BorderFactory.createCompoundBorder(
-            new TitledBorder(createLineBorder(COLOR_BORDE, 1), 
-            "Tablas disponibles", TitledBorder.LEFT, TitledBorder.TOP, 
+            new TitledBorder(createLineBorder(COLOR_BORDE, 1),
+            "Tablas disponibles", TitledBorder.LEFT, TitledBorder.TOP,
             FUENTE_TITULO, COLOR_PRIMARIO),
             new EmptyBorder(5, 5, 5, 5)
         ));
@@ -139,25 +132,35 @@ public class SqlEditorView extends JFrame {
         panelDerecho.add(scrollTablas);
 
         panelSuperior.add(panelDerecho, BorderLayout.EAST);
+        splitPane.setTopComponent(panelSuperior);
 
-        // Panel inferior: resultados
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBackground(COLOR_FONDO);
+        panelInferior.setBorder(BorderFactory.createCompoundBorder(
+            new EmptyBorder(5, 10, 10, 10),
+            new TitledBorder(createLineBorder(COLOR_BORDE, 1),
+            "Resultados", TitledBorder.LEFT, TitledBorder.TOP,
+            FUENTE_TITULO, COLOR_PRIMARIO)
+        ));
+
         tblResultados = new JTable();
         tblResultados.setFont(FUENTE_NORMAL);
         tblResultados.setRowHeight(22);
         tblResultados.setShowGrid(false);
         tblResultados.setIntercellSpacing(new Dimension(0, 0));
         tblResultados.setFillsViewportHeight(true);
-        
+
         JScrollPane scrollResultados = new JScrollPane(tblResultados);
-        scrollResultados.setBorder(BorderFactory.createCompoundBorder(
-            new EmptyBorder(5, 10, 10, 10),
-            new TitledBorder(createLineBorder(COLOR_BORDE, 1), 
-            "Resultados", TitledBorder.LEFT, TitledBorder.TOP, 
-            FUENTE_TITULO, COLOR_PRIMARIO)
-        ));
-        
-        splitPane.setTopComponent(panelSuperior);
-        splitPane.setBottomComponent(scrollResultados);
+        scrollResultados.setBorder(null);
+
+        lblMensajeSistema = new JLabel(" "); // NUEVO
+        lblMensajeSistema.setFont(FUENTE_NORMAL);
+        lblMensajeSistema.setForeground(Color.DARK_GRAY);
+        lblMensajeSistema.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+        panelInferior.add(lblMensajeSistema, BorderLayout.NORTH);
+        panelInferior.add(scrollResultados, BorderLayout.CENTER);
+        splitPane.setBottomComponent(panelInferior);
     }
 
     private void estilizarBoton(JButton boton, boolean primario) {
@@ -166,7 +169,7 @@ public class SqlEditorView extends JFrame {
         boton.setBorderPainted(false);
         boton.setOpaque(true);
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         if (primario) {
             boton.setBackground(COLOR_PRIMARIO);
             boton.setForeground(Color.WHITE);
@@ -174,7 +177,7 @@ public class SqlEditorView extends JFrame {
             boton.setBackground(COLOR_SECUNDARIO);
             boton.setForeground(COLOR_TEXTO);
         }
-        
+
         boton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 boton.setBackground(primario ? COLOR_PRIMARIO.darker() : COLOR_SECUNDARIO.darker());
@@ -202,9 +205,14 @@ public class SqlEditorView extends JFrame {
         }
     }
 
+    public void setMensajeSistema(String mensaje) {
+        lblMensajeSistema.setText(mensaje);
+    }
+
     public void limpiar() {
         txtConsulta.setText("");
         tblResultados.setModel(new DefaultTableModel());
+        lblMensajeSistema.setText(" ");
     }
 
     public void setBaseDeDatos(String nombreBD) {
@@ -224,7 +232,7 @@ public class SqlEditorView extends JFrame {
                 modeloListaTablas.addElement(tabla);
             }
         }
-        
+
         if (tablas == null || tablas.isEmpty()) {
             listaTablas.setToolTipText("No se encontraron tablas");
         } else {
