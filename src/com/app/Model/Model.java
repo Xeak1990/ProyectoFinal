@@ -41,26 +41,39 @@ public class Model {
     }
 
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
-        try (Statement stmt = conexion.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-
-            ResultSetMetaData meta = rs.getMetaData();
-            DefaultTableModel modelo = new DefaultTableModel();
-            int columnas = meta.getColumnCount();
-
-            for (int i = 1; i <= columnas; i++) {
-                modelo.addColumn(meta.getColumnName(i));
-            }
-
-            while (rs.next()) {
-                Object[] fila = new Object[columnas];
-                for (int i = 0; i < columnas; i++) {
-                    fila[i] = rs.getObject(i + 1);
+        try (Statement stmt = conexion.createStatement()) {
+            String trimmedQuery = query.trim().toLowerCase();
+    
+            // Si empieza con SELECT, ejecuta como consulta
+            if (trimmedQuery.startsWith("select")) {
+                try (ResultSet rs = stmt.executeQuery(query)) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    DefaultTableModel modelo = new DefaultTableModel();
+                    int columnas = meta.getColumnCount();
+    
+                    for (int i = 1; i <= columnas; i++) {
+                        modelo.addColumn(meta.getColumnName(i));
+                    }
+    
+                    while (rs.next()) {
+                        Object[] fila = new Object[columnas];
+                        for (int i = 0; i < columnas; i++) {
+                            fila[i] = rs.getObject(i + 1);
+                        }
+                        modelo.addRow(fila);
+                    }
+    
+                    return modelo;
                 }
-                modelo.addRow(fila);
+            } else {
+                // Para INSERT, UPDATE, DELETE
+                int filasAfectadas = stmt.executeUpdate(query);
+                DefaultTableModel modelo = new DefaultTableModel();
+                modelo.addColumn("Resultado");
+                modelo.addRow(new Object[] { "Filas afectadas: " + filasAfectadas });
+                return modelo;
             }
-
-            return modelo;
         }
     }
+    
 }
