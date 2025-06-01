@@ -176,6 +176,7 @@ public class View extends JFrame {
     public JButton getBtnConectar() { return btnConectar; }
     public JButton getBtnSalir() { return btnSalir; }
     public JButton getBtnActualizarBases() { return btnActualizarBases; }
+    
 
     // Métodos para manejo de UI
     public void setBasesDatos(List<String> bases) {
@@ -190,6 +191,9 @@ public class View extends JFrame {
     public void limpiarEstado() {
         lblEstado.setText(" ");
     }
+
+
+    
 
     public void bloquearInterfaz(boolean bloquear) {
         cmbServidores.setEnabled(!bloquear);
