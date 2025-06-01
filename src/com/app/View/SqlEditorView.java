@@ -18,7 +18,6 @@ public class SqlEditorView extends JFrame {
     private JList<String> listaTablas;
     private DefaultListModel<String> modeloListaTablas;
     private JLabel lblMensajeSistema;
-    private JComboBox<String> comboBasesDatos;
     private JButton btnCambiarBD;
     private JButton btnActualizarBD;
 
@@ -82,18 +81,6 @@ public class SqlEditorView extends JFrame {
         setBaseDeDatos(null);
         panelDerecho.add(txtBaseDeDatos);
         panelDerecho.add(Box.createVerticalStrut(10));
-
-        // Combo y botones para seleccionar base de datos
-        // Combo para cambiar de base de datos
-        comboBasesDatos = new JComboBox<>();
-        comboBasesDatos.setFont(FUENTE_NORMAL);
-        comboBasesDatos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        comboBasesDatos.setBackground(Color.WHITE);
-        comboBasesDatos.setBorder(BorderFactory.createCompoundBorder(
-        createLineBorder(COLOR_BORDE, 1),
-        new EmptyBorder(3, 8, 3, 8)
-    ));
-        panelDerecho.add(comboBasesDatos);
         panelDerecho.add(Box.createVerticalStrut(10));
 
         // Panel para botones de cambio de BD
@@ -105,10 +92,6 @@ public class SqlEditorView extends JFrame {
         estilizarBoton(btnCambiarBD, false);
         panelCambioBD.add(btnCambiarBD);
 
-        btnActualizarBD = new JButton("Actualizar BD");
-        estilizarBoton(btnActualizarBD, false);
-        panelCambioBD.add(btnActualizarBD);
-
         panelDerecho.add(panelCambioBD);
         panelDerecho.add(Box.createVerticalStrut(10));
 
@@ -118,17 +101,17 @@ public class SqlEditorView extends JFrame {
         panelBotones.setBackground(COLOR_FONDO);
         panelBotones.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        btnEjecutar = new JButton("Ejecutar (F5)");
+        btnEjecutar = new JButton("Ejecutar");
         estilizarBoton(btnEjecutar, true);
-        btnEjecutar.setMaximumSize(new Dimension(150, 35));
+        btnEjecutar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 
         btnLimpiar = new JButton("Limpiar");
         estilizarBoton(btnLimpiar, false);
-        btnLimpiar.setMaximumSize(new Dimension(150, 35));
+        btnLimpiar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 
         btnRefrescarTablas = new JButton("Refrescar tablas");
         estilizarBoton(btnRefrescarTablas, false);
-        btnRefrescarTablas.setMaximumSize(new Dimension(150, 35));
+        btnRefrescarTablas.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 
         panelBotones.add(btnEjecutar);
         panelBotones.add(Box.createVerticalStrut(10));
@@ -230,7 +213,6 @@ public class SqlEditorView extends JFrame {
     public JButton getBtnRefrescarTablas() { return btnRefrescarTablas; }
     public JButton getBtnCambiarBD() { return btnCambiarBD; }
     public JButton getBtnActualizarBD() { return btnActualizarBD; }
-    public JComboBox<String> getComboBasesDatos() { return comboBasesDatos; }
     public String getConsulta() { return txtConsulta.getText(); }
 
     public void setResultados(javax.swing.table.TableModel model) {
@@ -271,15 +253,6 @@ public class SqlEditorView extends JFrame {
             listaTablas.setToolTipText("No se encontraron tablas");
         } else {
             listaTablas.setToolTipText("Doble clic para generar SELECT");
-        }
-    }
-
-    public void actualizarComboBasesDatos(List<String> bases) {
-        comboBasesDatos.removeAllItems();
-        if (bases != null) {
-            for (String base : bases) {
-                comboBasesDatos.addItem(base);
-            }
         }
     }
 }
