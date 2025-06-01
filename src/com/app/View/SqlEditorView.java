@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
+import java.util.List;
 
 public class SqlEditorView extends JFrame {
     private JTextArea txtConsulta;
@@ -16,7 +17,10 @@ public class SqlEditorView extends JFrame {
     private JTextField txtBaseDeDatos;
     private JList<String> listaTablas;
     private DefaultListModel<String> modeloListaTablas;
-    private JLabel lblMensajeSistema; // NUEVO
+    private JLabel lblMensajeSistema;
+    private JComboBox<String> comboBasesDatos;
+    private JButton btnCambiarBD;
+    private JButton btnActualizarBD;
 
     private final Color COLOR_FONDO = new Color(245, 245, 245);
     private final Color COLOR_PRIMARIO = new Color(0, 120, 215);
@@ -29,7 +33,7 @@ public class SqlEditorView extends JFrame {
 
     public SqlEditorView() {
         setTitle("Editor SQL - MySQL Client");
-        setSize(900, 650);
+        setSize(950, 670);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(COLOR_FONDO);
@@ -77,8 +81,38 @@ public class SqlEditorView extends JFrame {
         txtBaseDeDatos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         setBaseDeDatos(null);
         panelDerecho.add(txtBaseDeDatos);
-        panelDerecho.add(Box.createVerticalStrut(15));
+        panelDerecho.add(Box.createVerticalStrut(10));
 
+        // Combo y botones para seleccionar base de datos
+        // Combo para cambiar de base de datos
+        comboBasesDatos = new JComboBox<>();
+        comboBasesDatos.setFont(FUENTE_NORMAL);
+        comboBasesDatos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        comboBasesDatos.setBackground(Color.WHITE);
+        comboBasesDatos.setBorder(BorderFactory.createCompoundBorder(
+        createLineBorder(COLOR_BORDE, 1),
+        new EmptyBorder(3, 8, 3, 8)
+    ));
+        panelDerecho.add(comboBasesDatos);
+        panelDerecho.add(Box.createVerticalStrut(10));
+
+        // Panel para botones de cambio de BD
+        JPanel panelCambioBD = new JPanel(new GridLayout(1, 2, 5, 0));
+        panelCambioBD.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        panelCambioBD.setBackground(COLOR_FONDO);
+
+        btnCambiarBD = new JButton("Cambiar BD");
+        estilizarBoton(btnCambiarBD, false);
+        panelCambioBD.add(btnCambiarBD);
+
+        btnActualizarBD = new JButton("Actualizar BD");
+        estilizarBoton(btnActualizarBD, false);
+        panelCambioBD.add(btnActualizarBD);
+
+        panelDerecho.add(panelCambioBD);
+        panelDerecho.add(Box.createVerticalStrut(10));
+
+        // Botones principales
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
         panelBotones.setBackground(COLOR_FONDO);
@@ -153,7 +187,7 @@ public class SqlEditorView extends JFrame {
         JScrollPane scrollResultados = new JScrollPane(tblResultados);
         scrollResultados.setBorder(null);
 
-        lblMensajeSistema = new JLabel(" "); // NUEVO
+        lblMensajeSistema = new JLabel(" ");
         lblMensajeSistema.setFont(FUENTE_NORMAL);
         lblMensajeSistema.setForeground(Color.DARK_GRAY);
         lblMensajeSistema.setBorder(new EmptyBorder(5, 0, 5, 0));
@@ -169,7 +203,6 @@ public class SqlEditorView extends JFrame {
         boton.setBorderPainted(false);
         boton.setOpaque(true);
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         if (primario) {
             boton.setBackground(COLOR_PRIMARIO);
             boton.setForeground(Color.WHITE);
@@ -177,12 +210,10 @@ public class SqlEditorView extends JFrame {
             boton.setBackground(COLOR_SECUNDARIO);
             boton.setForeground(COLOR_TEXTO);
         }
-
         boton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 boton.setBackground(primario ? COLOR_PRIMARIO.darker() : COLOR_SECUNDARIO.darker());
             }
-
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 boton.setBackground(primario ? COLOR_PRIMARIO : COLOR_SECUNDARIO);
             }
@@ -193,9 +224,13 @@ public class SqlEditorView extends JFrame {
         return BorderFactory.createLineBorder(color, thickness);
     }
 
+    // Getters
     public JButton getBtnEjecutar() { return btnEjecutar; }
     public JButton getBtnLimpiar() { return btnLimpiar; }
     public JButton getBtnRefrescarTablas() { return btnRefrescarTablas; }
+    public JButton getBtnCambiarBD() { return btnCambiarBD; }
+    public JButton getBtnActualizarBD() { return btnActualizarBD; }
+    public JComboBox<String> getComboBasesDatos() { return comboBasesDatos; }
     public String getConsulta() { return txtConsulta.getText(); }
 
     public void setResultados(javax.swing.table.TableModel model) {
@@ -225,18 +260,26 @@ public class SqlEditorView extends JFrame {
         }
     }
 
-    public void actualizarListaTablas(java.util.List<String> tablas) {
+    public void actualizarListaTablas(List<String> tablas) {
         modeloListaTablas.clear();
         if (tablas != null) {
             for (String tabla : tablas) {
                 modeloListaTablas.addElement(tabla);
             }
         }
-
         if (tablas == null || tablas.isEmpty()) {
             listaTablas.setToolTipText("No se encontraron tablas");
         } else {
             listaTablas.setToolTipText("Doble clic para generar SELECT");
+        }
+    }
+
+    public void actualizarComboBasesDatos(List<String> bases) {
+        comboBasesDatos.removeAllItems();
+        if (bases != null) {
+            for (String base : bases) {
+                comboBasesDatos.addItem(base);
+            }
         }
     }
 }

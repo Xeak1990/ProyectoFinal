@@ -38,9 +38,22 @@ public class Controller {
         });
 
         loginView.getBtnSalir().addActionListener(e -> System.exit(0));
+
         editorView.getBtnEjecutar().addActionListener(e -> ejecutarConsulta());
         editorView.getBtnLimpiar().addActionListener(e -> limpiarEditor());
         editorView.getBtnRefrescarTablas().addActionListener(e -> refrescarTablas());
+
+        // Nuevo listener para cambiar base de datos
+        editorView.getBtnCambiarBD().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(editorView,
+                "¿Desea desconectarse y cambiar de base de datos?",
+                "Confirmar",
+                JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                desconectar();
+            }
+        });
     }
 
     private boolean validarCamposLogin(boolean soloCredenciales) {
