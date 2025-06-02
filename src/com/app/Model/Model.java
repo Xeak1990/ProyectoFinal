@@ -5,9 +5,24 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Clase Model que gestiona la conexión a una base de datos MySQL
+ * y la ejecución de consultas SQL. Sirve como capa de acceso a datos.
+ */
 public class Model {
+    /** Conexión activa a la base de datos */
     private Connection conexion;
 
+    /**
+     * Obtiene todas las bases de datos disponibles en el servidor,
+     * excluyendo las bases de datos del sistema.
+     *
+     * @param host     Dirección del servidor MySQL.
+     * @param usuario  Usuario para autenticar la conexión.
+     * @param password Contraseña correspondiente al usuario.
+     * @return Lista de nombres de bases de datos accesibles.
+     * @throws SQLException si ocurre un error al acceder al servidor.
+     */
     public List<String> obtenerTodasLasBasesDatos(String host, String usuario, String password) throws SQLException {
         List<String> basesDatos = new ArrayList<>();
         String url = "jdbc:mysql://" + host + ":3306/?useSSL=false";
@@ -26,6 +41,15 @@ public class Model {
         return basesDatos;
     }
 
+    /**
+     * Establece una conexión con una base de datos MySQL específica.
+     *
+     * @param host     Dirección del servidor.
+     * @param database Nombre de la base de datos a la que se desea conectar.
+     * @param usuario  Usuario de autenticación.
+     * @param password Contraseña del usuario.
+     * @throws SQLException si ocurre un error al conectarse.
+     */
     public void conectar(String host, String database, String usuario, String password) throws SQLException {
         conexion = DriverManager.getConnection(
             "jdbc:mysql://" + host + ":3306/" + database + "?useSSL=false",
@@ -34,17 +58,28 @@ public class Model {
         );
     }
 
+    /**
+     * Cierra la conexión actual a la base de datos si está activa.
+     *
+     * @throws SQLException si ocurre un error al cerrar la conexión.
+     */
     public void desconectar() throws SQLException {
         if (conexion != null && !conexion.isClosed()) {
             conexion.close();
         }
     }
 
+    /**
+     * Obtiene la lista de tablas existentes en la base de datos actualmente conectada.
+     *
+     * @return Lista de nombres de tablas.
+     * @throws SQLException si ocurre un error al obtener las tablas.
+     */
     public List<String> obtenerTablasDeBaseDatos() throws SQLException {
         List<String> tablas = new ArrayList<>();
         if (conexion != null && !conexion.isClosed()) {
             DatabaseMetaData metaData = conexion.getMetaData();
-            String catalogoActual = conexion.getCatalog(); // O el nombre de la BD usada en la conexión
+            String catalogoActual = conexion.getCatalog();
             try (ResultSet rs = metaData.getTables(catalogoActual, null, "%", new String[]{"TABLE"})) {
                 while (rs.next()) {
                     tablas.add(rs.getString("TABLE_NAME"));
@@ -54,13 +89,21 @@ public class Model {
         return tablas;
     }
 
+    /**
+     * Ejecuta una consulta SQL sobre la base de datos conectada.
+     * Puede ser una consulta SELECT o una sentencia de modificación (INSERT, UPDATE, etc.).
+     *
+     * @param query Cadena con la consulta SQL a ejecutar.
+     * @return Un DefaultTableModel con los resultados de la consulta o mensaje del sistema.
+     * @throws SQLException si ocurre un error durante la ejecución de la consulta.
+     */
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
         try (Statement stmt = conexion.createStatement()) {
             String trimmedQuery = query.trim().toLowerCase();
             DefaultTableModel modelo = new DefaultTableModel();
 
             if (trimmedQuery.startsWith("select")) {
-                    try (ResultSet rs = stmt.executeQuery(query)) {
+                try (ResultSet rs = stmt.executeQuery(query)) {
                     ResultSetMetaData meta = rs.getMetaData();
                     int columnas = meta.getColumnCount();
 
@@ -78,7 +121,6 @@ public class Model {
                 }
             } else {
                 int filasAfectadas = stmt.executeUpdate(query);
-
                 String tabla = extraerNombreTabla(trimmedQuery);
 
                 if (tabla != null && !tabla.isEmpty()) {
@@ -99,8 +141,6 @@ public class Model {
                             }
                             modelo.addRow(fila);
                         }
-                        if (!tieneDatos) {
-                        }
                     }
                 } else {
                     modelo.addColumn("Mensaje del sistema");
@@ -112,8 +152,14 @@ public class Model {
         }
     }
 
+    /**
+     * Extrae el nombre de una tabla a partir de una consulta SQL básica.
+     * Aplica a sentencias como CREATE TABLE, INSERT INTO, UPDATE, DELETE FROM, TRUNCATE TABLE.
+     *
+     * @param query Consulta SQL en minúsculas y sin espacios iniciales.
+     * @return Nombre de la tabla si se puede identificar, de lo contrario null.
+     */
     private String extraerNombreTabla(String query) {
-        // Esta es una versión simple, asume formato básico:
         if (query.startsWith("create table")) {
             String[] partes = query.split("\\s+");
             if (partes.length >= 3) {
