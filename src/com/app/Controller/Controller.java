@@ -9,11 +9,27 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * Controlador principal de la aplicación que gestiona la interacción
+ * entre las vistas (login y editor SQL) y el modelo de datos.
+ * 
+ * <p>Define la lógica de conexión, validación, ejecución de consultas SQL y actualización de datos.</p>
+ * 
+ * @author [Tu Nombre]
+ */
 public class Controller {
     private final View loginView;
     private final SqlEditorView editorView;
     private final Model modelo;
 
+    /**
+     * Constructor del controlador que inicializa las vistas y el modelo.
+     * También configura los listeners para los componentes gráficos.
+     *
+     * @param loginView la vista de inicio de sesión
+     * @param editorView la vista del editor SQL
+     * @param model el modelo de acceso a datos
+     */
     public Controller(View loginView, SqlEditorView editorView, Model model) {
         this.loginView = loginView;
         this.editorView = editorView;
@@ -23,6 +39,10 @@ public class Controller {
         loginView.setVisible(true);
     }
 
+    /**
+     * Configura todos los listeners de los botones en las vistas.
+     * Define el comportamiento de la interfaz de usuario.
+     */
     private void configurarListeners() {
         loginView.getBtnActualizarBases().addActionListener(e -> {
             loginView.limpiarEstado();
@@ -43,7 +63,6 @@ public class Controller {
         editorView.getBtnLimpiar().addActionListener(e -> limpiarEditor());
         editorView.getBtnRefrescarTablas().addActionListener(e -> refrescarTablas());
 
-        // Nuevo listener para cambiar base de datos
         editorView.getBtnCambiarBD().addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(editorView,
                 "¿Desea desconectarse y cambiar de base de datos?",
@@ -56,6 +75,12 @@ public class Controller {
         });
     }
 
+    /**
+     * Valida los campos del formulario de login.
+     *
+     * @param soloCredenciales si es true, se valida solo usuario y contraseña; si es false, también se valida la base de datos seleccionada
+     * @return true si los campos son válidos, false en caso contrario
+     */
     private boolean validarCamposLogin(boolean soloCredenciales) {
         if(loginView.getUsuario().isEmpty()) {
             loginView.mostrarError("El usuario es requerido");
@@ -75,6 +100,10 @@ public class Controller {
         return true;
     }
 
+    /**
+     * Carga la lista de bases de datos disponibles desde el servidor.
+     * Utiliza un SwingWorker para realizar la operación en segundo plano.
+     */
     private void cargarBasesDatos() {
         if(!validarCamposLogin(true)) return;
 
@@ -113,6 +142,10 @@ public class Controller {
         worker.execute();
     }
 
+    /**
+     * Conecta a la base de datos seleccionada usando los datos del formulario de login.
+     * También actualiza la interfaz para mostrar el editor SQL y sus tablas.
+     */
     private void conectarABaseDatos() {
         loginView.bloquearInterfaz(true);
 
@@ -152,6 +185,10 @@ public class Controller {
         worker.execute();
     }
 
+    /**
+     * Refresca la lista de tablas disponibles en la base de datos actual.
+     * Se ejecuta en segundo plano usando SwingWorker.
+     */
     private void refrescarTablas() {
         SwingWorker<List<String>, Void> worker = new SwingWorker<>() {
             @Override
@@ -174,6 +211,9 @@ public class Controller {
         worker.execute();
     }
 
+    /**
+     * Desconecta la sesión actual de la base de datos y vuelve a mostrar la vista de login.
+     */
     private void desconectar() {
         try {
             modelo.desconectar();
@@ -187,6 +227,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Ejecuta la consulta SQL ingresada en el editor.
+     * Muestra los resultados en una tabla o un mensaje de error si la consulta falla.
+     */
     private void ejecutarConsulta() {
         if(editorView.getConsulta().trim().isEmpty()) {
             JOptionPane.showMessageDialog(editorView,
@@ -219,6 +263,9 @@ public class Controller {
         worker.execute();
     }
 
+    /**
+     * Limpia el contenido del editor SQL.
+     */
     private void limpiarEditor() {
         editorView.limpiar();
     }
