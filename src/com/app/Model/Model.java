@@ -97,6 +97,7 @@ public class Model {
      * @return Un DefaultTableModel con los resultados de la consulta o mensaje del sistema.
      * @throws SQLException si ocurre un error durante la ejecución de la consulta.
      */
+    @SuppressWarnings("unused")
     public DefaultTableModel ejecutarConsulta(String query) throws SQLException {
         try (Statement stmt = conexion.createStatement()) {
             String trimmedQuery = query.trim().toLowerCase();
